@@ -4,7 +4,7 @@ use std::io::{self, BufRead, BufReader, IsTerminal, Read, Write};
 use std::path::Path;
 
 use crate::config::cli::FilterArgs;
-use crate::engine::{self, CompiledRegex, EngineFlags, EngineKind};
+use crate::engine::{self, CompiledRegex, EngineFlags};
 
 pub mod app;
 pub mod json_path;
@@ -70,7 +70,7 @@ pub fn filter_lines(
         });
     }
 
-    let engine = engine::create_engine(EngineKind::RustRegex);
+    let engine = engine::create_engine(engine::detect_minimum_engine(pattern));
     let compiled = engine
         .compile(pattern, &options.flags())
         .map_err(|e| e.to_string())?;
@@ -110,7 +110,7 @@ pub fn filter_lines_with_extracted(
             .collect());
     }
 
-    let engine = engine::create_engine(EngineKind::RustRegex);
+    let engine = engine::create_engine(engine::detect_minimum_engine(pattern));
     let compiled = engine
         .compile(pattern, &options.flags())
         .map_err(|e| e.to_string())?;
@@ -194,20 +194,22 @@ pub fn emit_count(writer: &mut dyn Write, matched_count: usize) -> io::Result<()
 /// single unterminated multi-gigabyte line cannot OOM the process before the
 /// line cap kicks in.
 ///
-/// Returns `(lines, truncated)` where `truncated` is `true` if the line cap
-/// was reached before end-of-input OR any individual line was byte-truncated.
+/// Returns `(lines, line_truncated, byte_truncated)`:
+/// * `line_truncated` — the line-count cap was reached before end-of-input.
+/// * `byte_truncated` — at least one line exceeded `MAX_LINE_BYTES` and was truncated.
 pub fn read_input(
     file: Option<&Path>,
     fallback: impl Read,
     max_lines: usize,
-) -> io::Result<(Vec<String>, bool)> {
+) -> io::Result<(Vec<String>, bool, bool)> {
     let mut reader: Box<dyn BufRead> = match file {
         Some(path) => Box::new(BufReader::new(std::fs::File::open(path)?)),
         None => Box::new(BufReader::new(fallback)),
     };
     let mut out = Vec::new();
     let mut buf = Vec::new();
-    let mut truncated = false;
+    let mut line_truncated = false;
+    let mut byte_truncated = false;
     // +1 so `read_until` will still consume the terminating newline when the
     // line is exactly `MAX_LINE_BYTES` bytes of content.
     let line_limit = MAX_LINE_BYTES as u64 + 1;
@@ -220,7 +222,7 @@ pub fn read_input(
             // can't OOM us.
             let mut one = [0u8; 1];
             if reader.read(&mut one)? > 0 {
-                truncated = true;
+                line_truncated = true;
             }
             break;
         }
@@ -237,10 +239,18 @@ pub fn read_input(
         // their terminating newline).
         let line_overflowed = buf.last() != Some(&b'\n') && n as u64 == line_limit;
         if line_overflowed {
-            truncated = true;
+            byte_truncated = true;
             buf.truncate(MAX_LINE_BYTES);
-            let mut discard = Vec::new();
-            reader.read_until(b'\n', &mut discard)?;
+            // Drain the rest of the overflowed line in bounded 64 KiB chunks
+            // to prevent OOM when the tail is itself very large with no newline.
+            let mut discard = Vec::with_capacity(65_536);
+            loop {
+                discard.clear();
+                (&mut reader).take(65_536).read_until(b'\n', &mut discard)?;
+                if discard.is_empty() || discard.last() == Some(&b'\n') {
+                    break;
+                }
+            }
         }
         // Strip trailing \n and optional \r.
         let end = buf
@@ -250,7 +260,7 @@ pub fn read_input(
             .unwrap_or(0);
         out.push(String::from_utf8_lossy(&buf[..end]).into_owned());
     }
-    Ok((out, truncated))
+    Ok((out, line_truncated, byte_truncated))
 }
 
 /// CLI entry point for `rgx filter`. Reads input, decides between non-interactive
@@ -266,9 +276,16 @@ pub fn entry(args: FilterArgs) -> i32 {
 }
 
 fn run_entry(args: FilterArgs) -> Result<i32, String> {
-    let (lines, truncated) = read_input(args.file.as_deref(), io::stdin(), args.max_lines)
-        .map_err(|e| format!("reading input: {e}"))?;
-    if truncated {
+    let (lines, line_truncated, byte_truncated) =
+        read_input(args.file.as_deref(), io::stdin(), args.max_lines)
+            .map_err(|e| format!("reading input: {e}"))?;
+    if byte_truncated {
+        eprintln!(
+            "rgx filter: one or more lines exceeded {} bytes and were truncated",
+            MAX_LINE_BYTES
+        );
+    }
+    if line_truncated {
         eprintln!(
             "rgx filter: input truncated at {} lines (use --max-lines to override)",
             args.max_lines

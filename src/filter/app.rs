@@ -1,6 +1,6 @@
 //! TUI-mode state for `rgx filter`.
 
-use crate::engine::{self, CompiledRegex, EngineFlags, EngineKind, RegexEngine};
+use crate::engine::{self, CompiledRegex, EngineFlags, RegexEngine};
 use crate::filter::{match_haystack, FilterOptions};
 use crate::input::editor::Editor;
 
@@ -83,7 +83,7 @@ impl FilterApp {
             case_insensitive: options.case_insensitive,
             ..EngineFlags::default()
         };
-        let engine = engine::create_engine(EngineKind::RustRegex);
+        let engine = engine::create_engine(engine::detect_minimum_engine(initial_pattern));
         let mut app = Self {
             pattern_editor,
             options,
@@ -130,6 +130,7 @@ impl FilterApp {
             self.clamp_selection();
             return;
         }
+        self.engine = engine::create_engine(engine::detect_minimum_engine(&pattern));
         match self.engine.compile(&pattern, &self.engine_flags) {
             Ok(compiled) => {
                 let (indices, spans) = self.collect_matches(&*compiled);

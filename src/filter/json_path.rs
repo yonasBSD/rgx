@@ -161,9 +161,17 @@ fn parse_quoted_key(bytes: &[u8], offset: usize) -> Result<(String, usize), Stri
                     b'"' => out.push(b'"'),
                     b'\\' => out.push(b'\\'),
                     other => {
+                        // `bytes` is a slice of valid UTF-8 (it comes from
+                        // `s.as_bytes()`), so reading the char at j+1 handles
+                        // multi-byte sequences correctly — avoids Latin-1
+                        // misreporting that `other as char` would produce.
+                        let escaped = std::str::from_utf8(&bytes[j + 1..])
+                            .ok()
+                            .and_then(|s| s.chars().next())
+                            .unwrap_or(other as char);
                         return Err(format!(
                             "unknown escape '\\{}' at position {}",
-                            other as char,
+                            escaped,
                             offset + j
                         ));
                     }
