@@ -481,6 +481,15 @@ impl App {
         self.copy_to_clipboard(&text, &msg);
     }
 
+    pub fn copy_pattern(&mut self) {
+        let pattern = self.regex_editor.content().to_string();
+        if pattern.is_empty() {
+            return;
+        }
+        let msg = format!("Copied pattern: \"{}\"", truncate(&pattern, 40));
+        self.copy_to_clipboard(&pattern, &msg);
+    }
+
     fn copy_to_clipboard(&mut self, text: &str, success_msg: &str) {
         match arboard::Clipboard::new() {
             Ok(mut cb) => match cb.set_text(text) {
@@ -856,7 +865,9 @@ impl App {
                 }
             }
             Action::CopyMatch => {
-                if self.focused_panel == Self::PANEL_MATCHES {
+                if self.focused_panel == Self::PANEL_REGEX {
+                    self.copy_pattern();
+                } else if self.focused_panel == Self::PANEL_MATCHES {
                     self.copy_selected_match();
                 }
             }

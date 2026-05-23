@@ -237,7 +237,10 @@ fn build_help_pages(engine: EngineKind) -> Vec<(String, Vec<Line<'static>>)> {
         shortcut("Ctrl+E", "Cycle regex engine"),
         shortcut("Ctrl+Z", "Undo"),
         shortcut("Ctrl+Shift+Z", "Redo"),
-        shortcut("Ctrl+Y", "Copy selected match to clipboard"),
+        shortcut(
+            "Ctrl+Y",
+            "Copy pattern (regex panel) or match (matches panel)",
+        ),
         shortcut("Ctrl+O", "Output results to stdout and quit"),
         shortcut("Ctrl+S", "Save workspace"),
         shortcut("Ctrl+R", "Open regex recipe library"),
@@ -267,25 +270,33 @@ fn build_help_pages(engine: EngineKind) -> Vec<(String, Vec<Line<'static>>)> {
         )),
     ];
 
-    // Page 1: Common regex syntax
+    let header = |text: &'static str| -> Line<'static> {
+        Line::from(Span::styled(text, Style::default().fg(theme::OVERLAY)))
+    };
+
+    // Page 1: Quick Reference
     let page1 = vec![
+        header("── Sequences ─────────────────────────────────────"),
         shortcut(".", "Any character (except newline by default)"),
         shortcut("\\d  \\D", "Digit / non-digit"),
         shortcut("\\w  \\W", "Word char / non-word char"),
         shortcut("\\s  \\S", "Whitespace / non-whitespace"),
+        shortcut("\\t  \\n  \\r", "Tab / newline / carriage return"),
         shortcut("\\b  \\B", "Word boundary / non-boundary"),
         shortcut("^  $", "Start / end of line"),
+        header("── Classes & Groups ──────────────────────────────"),
         shortcut("[abc]", "Character class"),
         shortcut("[^abc]", "Negated character class"),
         shortcut("[a-z]", "Character range"),
         shortcut("(group)", "Capturing group"),
         shortcut("(?:group)", "Non-capturing group"),
         shortcut("(?P<n>...)", "Named capturing group"),
+        shortcut("(?=...)  (?!...)", "Lookahead pos/neg  (fancy/PCRE2)"),
         shortcut("a|b", "Alternation (a or b)"),
+        header("── Quantifiers ───────────────────────────────────"),
         shortcut("*  +  ?", "0+, 1+, 0 or 1 (greedy)"),
-        shortcut("*?  +?  ??", "Lazy quantifiers"),
+        shortcut("*?  +?  ??", "Lazy variants"),
         shortcut("{n}  {n,m}", "Exact / range repetition"),
-        Line::from(""),
         Line::from(Span::styled(
             "Replacement: $1, ${name}, $0/$&, $$ for literal $",
             Style::default().fg(theme::SUBTEXT),
@@ -349,7 +360,7 @@ fn build_help_pages(engine: EngineKind) -> Vec<(String, Vec<Line<'static>>)> {
 
     vec![
         ("Keyboard Shortcuts".to_string(), page0),
-        ("Common Regex Syntax".to_string(), page1),
+        ("Quick Reference".to_string(), page1),
         (format!("Engine: {engine_name}"), page2),
     ]
 }
@@ -376,7 +387,7 @@ fn render_help_overlay(
     page: usize,
     bt: BorderType,
 ) {
-    let help_area = centered_overlay(frame, area, 64, 24);
+    let help_area = centered_overlay(frame, area, 64, 28);
 
     let pages = build_help_pages(engine);
     let current = page.min(pages.len() - 1);
