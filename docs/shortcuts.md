@@ -12,7 +12,7 @@ Press `F1` inside the app for an in-terminal cheat sheet.
 | `Ctrl+E` | Cycle regex engine |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Shift+Z` | Redo |
-| `Ctrl+Y` | Copy selected match to clipboard |
+| `Ctrl+Y` | Copy pattern to clipboard (regex panel) or selected match (matches panel) |
 | `Ctrl+R` | Open regex recipe library |
 | `Ctrl+W` | Toggle whitespace visualization |
 | `Ctrl+O` | Output results to stdout and quit |

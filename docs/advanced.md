@@ -67,7 +67,7 @@ cargo install rgx-cli --features pcre2-engine
 | Capture group highlighting | Yes | No | No |
 | Plain-English explanations | Yes | No | No |
 | Replace/substitution | Yes | No | No |
-| Match clipboard copy | Yes | No | No |
+| Clipboard copy (pattern & match) | Yes | No | No |
 | Undo/redo | Yes | No | No |
 | Whitespace visualization | Yes | Yes | No |
 | Mouse support | Yes | No | No |

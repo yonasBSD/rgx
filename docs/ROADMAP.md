@@ -1,8 +1,8 @@
 # rgx Roadmap
 
-## Current direction (updated 2026-04-19)
+## Current direction (updated 2026-05-23)
 
-**rgx v0.12.1 shipped.** The project is in maintenance mode. The regex-
+**rgx v0.12.2 shipped.** The project is in maintenance mode. The regex-
 debugging audience has been served: step-through debugger, grex overlay,
 code generation, test suite mode, workspace save/load, vim mode, filter
 mode with `--json` JSONL-field extraction, and regex101 URL export have
@@ -34,6 +34,19 @@ editor-mode workflow.
 
 ## Recently shipped
 
+- **v0.12.3 (main, unreleased)** — context-aware `Ctrl+Y`: copies the
+  pattern when the regex panel is focused, copies the selected match
+  when the matches panel is focused. F1 page 2 renamed "Quick
+  Reference" and reorganized into three labeled sections (Sequences,
+  Classes & Groups, Quantifiers) with `\t \n \r` and a lookahead hint
+  added. Filter subsystem hardened: oversized-line drain now bounded
+  at 64 KiB per chunk to prevent OOM on giant no-newline tails;
+  `filter_lines`, `filter_lines_with_extracted`, and `FilterApp` all
+  use `detect_minimum_engine` so lookahead/backref patterns work
+  consistently in TUI and non-interactive modes; truncation warning
+  now correctly identifies byte-overflow vs. line-count cause;
+  `parse_quoted_key` escape error now reports the correct UTF-8
+  character instead of a Latin-1 byte cast.
 - **v0.12.1** (2026-04-19) — bug fix: `rgx -p --engine fancy` with
   lookaround patterns no longer errors out. The `recompute()` path used
   to promote `regex-syntax`'s parse error (which doesn't support
