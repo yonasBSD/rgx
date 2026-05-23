@@ -11,7 +11,7 @@
 
 Test and debug regular expressions without leaving your terminal. Written in Rust.
 
-![demo](https://raw.githubusercontent.com/brevity1swos/rgx/main/assets/demo.gif?v=6)
+![demo](https://raw.githubusercontent.com/brevity1swos/rgx/main/assets/demo.gif?v=7)
 
 *Press F1 in the app for a multi-page cheat sheet.*
 
