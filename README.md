@@ -2,7 +2,7 @@
 
 # rgx
 
-**A terminal regex tester with real-time matching and multi-engine support**
+**A regex debugger for the terminal — step-through execution, 3 engines, code generation, and live stream filtering**
 
 [![CI](https://github.com/brevity1swos/rgx/actions/workflows/ci.yml/badge.svg)](https://github.com/brevity1swos/rgx/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/rgx-cli.svg)](https://crates.io/crates/rgx-cli)
@@ -73,18 +73,18 @@ Full flag reference, piping recipes, and `rgx filter` + `--json` usage:
 
 ## Features
 
+- **Step-through debugger** (Ctrl+D, PCRE2) — backtracking visualization, heatmap mode, dual-cursor trace
 - Real-time matching with AST-based syntax highlighting and capture-group colors
 - **3 regex engines**: Rust `regex` (default), `fancy-regex` (lookaround / backrefs), PCRE2 (+ recursion / conditionals)
 - **Auto engine selection** — upgrades engines automatically when your pattern needs lookahead, backreferences, or recursion
 - **Plain-English explanations** for any pattern, generated from the AST
-- **Step-through debugger** (Ctrl+D, PCRE2) with backtracking visualization and heatmap mode
 - **Code generation** — Ctrl+G produces ready-to-paste code in 8 languages (Rust, Python, JS, Go, Java, C#, PHP, Ruby)
 - **Generate regex from examples** — Ctrl+X opens a [grex](https://crates.io/crates/grex) overlay
 - **Live filter mode** — `rgx filter` streams stdin/file through a regex TUI, with `--json` JSONL-field extraction
+- **Test suite mode** — `rgx --test file.toml` validates patterns against assertions in CI
 - **Non-interactive batch mode** — `-p` with `--count`, `--group`, `--json`, `--color`, grep-like exit codes
 - **Vim mode**, **mouse**, **pattern history + undo/redo**, **clipboard copy**, **whitespace visualization**
 - **Workspaces** — save/load regex state to a TOML file (`-w`) — track in git
-- **Test suite mode** — `rgx --test file.toml` validates patterns against assertions in CI
 - **Editor integrations** — VS Code, Neovim, Zed, tmux
 - **Shell completions** — `--completions bash|zsh|fish`
 - **Cross-platform** — Linux, macOS, Windows
