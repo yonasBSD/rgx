@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.3] - 2026-05-23
+
+### Bug Fixes
+
+- *(filter)* Harden filter subsystem against OOM, engine mismatch, and bad diagnostics
+- Drain overflowed lines in 64 KiB bounded chunks to prevent OOM when
+    the tail of an oversized line contains no newline
+  - Use detect_minimum_engine() in filter_lines, filter_lines_with_extracted,
+    and FilterApp so lookahead/backref patterns work in all modes; eliminates
+    TUI vs non-interactive engine divergence
+  - Split read_input return into (lines, line_truncated, byte_truncated) so
+    the truncation warning correctly identifies the cause instead of always
+    printing the line-count cap message for byte-level truncation
+  - Fix parse_quoted_key escape error to read the full UTF-8 char via
+    str::from_utf8 instead of casting a raw byte with 'other as char',
+    which misreported multi-byte sequences as Latin-1 characters
+
+### Documentation
+
+- *(changelog)* Scrub private project references from history entries
+Remove mentions of sibling tools and the landing-site project from
+  changelog entries across v0.12.0–v0.12.2. Inline descriptions now
+  reference only rgx-visible concepts (piping, filter mode, standalone
+  presentation) so the public changelog is self-contained.
+- Update shortcuts, comparison table, and roadmap for v0.12.3
+Ctrl+Y entry now reflects context-aware copy (regex vs matches panel).
+  Comparison table row updated to "Clipboard copy (pattern & match)".
+  ROADMAP updated to 2026-05-23 with v0.12.3 unreleased feature summary.
+
+### Features
+
+- *(ui)* Context-aware Ctrl+Y copy and Quick Reference help page
+Ctrl+Y now copies the pattern when the regex panel is focused and the
+  selected match when the matches panel is focused, closing the most
+  common clipboard request without adding a new key binding.
+
+  The F1 Quick Reference page (was "Common Regex Syntax") is reorganized
+  into three labeled sections — Sequences, Classes & Groups, Quantifiers —
+  and gains \t \n \r and a lookahead hint. Overlay height bumped to 28
+  to accommodate the expanded content.
+
+
 ## [0.12.2] - 2026-04-19
 
 ### Documentation
