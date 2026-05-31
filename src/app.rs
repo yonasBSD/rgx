@@ -263,8 +263,7 @@ impl App {
             self.engine_kind = suggested;
             self.engine = engine::create_engine(suggested);
             self.status.set(format!(
-                "Auto-switched {} \u{2192} {} for this pattern",
-                prev, suggested,
+                "Auto-switched {prev} \u{2192} {suggested} for this pattern",
             ));
         }
 
@@ -674,7 +673,7 @@ impl App {
             return;
         }
         let code = crate::codegen::generate_code(lang, &pattern, &self.flags);
-        self.copy_to_clipboard(&code, &format!("{} code copied to clipboard", lang));
+        self.copy_to_clipboard(&code, &format!("{lang} code copied to clipboard"));
         self.overlay.codegen = false;
     }
 
@@ -777,12 +776,7 @@ impl App {
     pub fn debug_next_match(&mut self) {
         #[cfg(feature = "pcre2-engine")]
         if let Some(ref mut s) = self.debug_session {
-            let current_attempt = s
-                .trace
-                .steps
-                .get(s.step)
-                .map(|st| st.match_attempt)
-                .unwrap_or(0);
+            let current_attempt = s.trace.steps.get(s.step).map_or(0, |st| st.match_attempt);
             for (i, step) in s.trace.steps.iter().enumerate().skip(s.step + 1) {
                 if step.match_attempt > current_attempt {
                     s.step = i;

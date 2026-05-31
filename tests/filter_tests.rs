@@ -8,7 +8,7 @@ use rgx::filter::{
 };
 
 fn to_lines(strs: &[&str]) -> Vec<String> {
-    strs.iter().map(|s| s.to_string()).collect()
+    strs.iter().map(std::string::ToString::to_string).collect()
 }
 
 #[test]
@@ -341,7 +341,7 @@ fn read_input_truncates_oversized_line() {
     // second line should still be readable intact.
     let cap = rgx::filter::MAX_LINE_BYTES;
     let big: Vec<u8> = std::iter::repeat(b'x').take(cap + 1024).collect();
-    let mut data = big.clone();
+    let mut data = big;
     data.push(b'\n');
     data.extend_from_slice(b"next\n");
     let (got, _, byte_truncated) = read_input(None, Cursor::new(data), 100_000).unwrap();
@@ -438,7 +438,7 @@ fn filter_app_toggle_invert_flips_match_set() {
 #[test]
 fn filter_app_toggle_case_insensitive_recomputes() {
     let lines = to_lines(&["ERROR one", "ok", "error two"]);
-    let mut app = FilterApp::new(lines.clone(), "error", FilterOptions::default());
+    let mut app = FilterApp::new(lines, "error", FilterOptions::default());
     assert_eq!(app.matched, vec![2]);
     app.toggle_case_insensitive();
     assert_eq!(app.matched, vec![0, 2]);
@@ -641,7 +641,7 @@ fn filter_ui_renders_json_extracted_with_arrow_prefix() {
     let rendered: String = buf
         .content()
         .iter()
-        .map(|c| c.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(
@@ -677,7 +677,7 @@ fn filter_ui_json_narrow_falls_back_to_single_line() {
     let rendered: String = buf
         .content()
         .iter()
-        .map(|c| c.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(rendered.contains("boom"));
@@ -702,7 +702,7 @@ fn filter_ui_render_does_not_panic() {
     let rendered: String = buf
         .content()
         .iter()
-        .map(|c| c.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(rendered.contains("Pattern"));
@@ -839,7 +839,7 @@ fn filter_ui_render_scrolls_selection_into_view() {
     let rendered: String = buf
         .content()
         .iter()
-        .map(|c| c.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(
@@ -866,7 +866,7 @@ fn filter_ui_render_with_invalid_pattern_shows_error() {
     let rendered: String = buf
         .content()
         .iter()
-        .map(|c| c.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(rendered.contains("invalid"));

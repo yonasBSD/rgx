@@ -347,7 +347,7 @@ fn expand_replacement(template: &str, m: &Match) -> String {
                 }
                 Some(&(_, '{')) => {
                     chars.next(); // consume '{'
-                    let brace_start = chars.peek().map(|&(idx, _)| idx).unwrap_or(template.len());
+                    let brace_start = chars.peek().map_or(template.len(), |&(idx, _)| idx);
                     if let Some(close) = template[brace_start..].find('}') {
                         let ref_name = &template[brace_start..brace_start + close];
                         if let Some(text) = lookup_capture(m, ref_name) {
@@ -479,7 +479,7 @@ mod tests {
     ) -> CaptureGroup {
         CaptureGroup {
             index,
-            name: name.map(|s| s.to_string()),
+            name: name.map(std::string::ToString::to_string),
             start,
             end,
             text: text.to_string(),

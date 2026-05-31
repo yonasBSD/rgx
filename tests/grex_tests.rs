@@ -45,7 +45,7 @@ fn grex_overlay_renders_empty_state_without_panic() {
     let rendered: String = buffer
         .content()
         .iter()
-        .map(|cell| cell.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(
@@ -76,7 +76,7 @@ fn grex_overlay_renders_populated_state() {
     let rendered: String = buffer
         .content()
         .iter()
-        .map(|cell| cell.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(rendered.contains("foo"), "example line missing");
@@ -340,7 +340,7 @@ fn ui_render_routes_to_grex_overlay_when_open() {
     let rendered: String = buffer
         .content()
         .iter()
-        .map(|cell| cell.symbol())
+        .map(ratatui::buffer::Cell::symbol)
         .collect::<Vec<_>>()
         .join("");
     assert!(

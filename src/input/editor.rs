@@ -58,7 +58,7 @@ impl Editor {
     pub fn cursor_line_col(&self) -> (usize, usize) {
         let before = &self.content[..self.cursor];
         let line = before.matches('\n').count();
-        let line_start = before.rfind('\n').map(|p| p + 1).unwrap_or(0);
+        let line_start = before.rfind('\n').map_or(0, |p| p + 1);
         let col = UnicodeWidthStr::width(&self.content[line_start..self.cursor]);
         (line, col)
     }
@@ -364,8 +364,7 @@ impl Editor {
         let offset = line_text
             .char_indices()
             .find(|(_, c)| !c.is_whitespace())
-            .map(|(i, _)| i)
-            .unwrap_or(0);
+            .map_or(0, |(i, _)| i);
         self.cursor = start + offset;
     }
 
