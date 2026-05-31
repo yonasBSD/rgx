@@ -210,11 +210,9 @@ impl Editor {
                     return;
                 }
             }
-            // Reached start of string
-            self.cursor = 0;
-        } else {
-            self.cursor = 0;
         }
+        // Reached start of string
+        self.cursor = 0;
     }
 
     /// Move cursor right by one word (to next word boundary).

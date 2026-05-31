@@ -392,19 +392,17 @@ impl App {
         let Some(idx) = self.history.index else {
             return;
         };
-        if idx + 1 < self.history.entries.len() {
+        let new_content = if idx + 1 < self.history.entries.len() {
             let new_index = idx + 1;
             self.history.index = Some(new_index);
-            let pattern = self.history.entries[new_index].clone();
-            self.regex_editor = Editor::with_content(pattern);
-            self.recompute();
+            self.history.entries[new_index].clone()
         } else {
             // Past end — restore temp
             self.history.index = None;
-            let content = self.history.temp.take().unwrap_or_default();
-            self.regex_editor = Editor::with_content(content);
-            self.recompute();
-        }
+            self.history.temp.take().unwrap_or_default()
+        };
+        self.regex_editor = Editor::with_content(new_content);
+        self.recompute();
     }
 
     // --- Match selection + clipboard ---
