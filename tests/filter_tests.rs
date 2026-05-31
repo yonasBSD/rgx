@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::io::Cursor;
 
 use clap::Parser;
@@ -314,7 +315,10 @@ fn read_input_from_file() {
 fn read_input_caps_at_max_lines() {
     // Feed 1000 lines with a cap of 5 — expect exactly 5 lines back and
     // truncated == true.
-    let data: String = (0..1000).map(|i| format!("line-{i}\n")).collect();
+    let mut data = String::new();
+    for i in 0..1000 {
+        let _ = writeln!(data, "line-{i}");
+    }
     let (got, line_truncated, _) = read_input(None, Cursor::new(data), 5).unwrap();
     assert_eq!(got.len(), 5);
     assert_eq!(got[0], "line-0");
@@ -361,7 +365,10 @@ fn read_input_truncates_oversized_line() {
 #[test]
 fn read_input_zero_means_no_cap() {
     // max_lines = 0 disables the cap entirely.
-    let data: String = (0..50).map(|i| format!("l{i}\n")).collect();
+    let mut data = String::new();
+    for i in 0..50 {
+        let _ = writeln!(data, "l{i}");
+    }
     let (got, line_truncated, byte_truncated) = read_input(None, Cursor::new(data), 0).unwrap();
     assert_eq!(got.len(), 50);
     assert!(!line_truncated && !byte_truncated);
