@@ -1,6 +1,7 @@
-# release-plz.toml — bump-vs-skip filter
+# release-plz.toml
 #
-# Only open release PRs for commits that materially affect end users.
+# Workspace config for release-plz. The release_commits filter limits bumps to
+# commits that materially affect end users:
 #   Include: feat / fix / perf / refactor / docs(readme)
 #   Exclude: chore, style, test, ci, build, generic docs:, docs(launch),
 #            and anything else — plumbing and internal tracking that
@@ -14,4 +15,8 @@
 # filter prevents recurrence. See feedback_launch_commit_prefix memory.
 
 [workspace]
+changelog_config = "cliff.toml"
+allow_dirty = true
+git_release_enable = true
+git_tag_enable = true
 release_commits = "^(feat|fix|perf|refactor|docs?\\(readme\\))[(:!]"
