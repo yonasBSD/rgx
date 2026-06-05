@@ -494,11 +494,29 @@ impl App {
     }
 
     fn copy_to_clipboard(&mut self, text: &str, success_msg: &str) {
-        match arboard::Clipboard::new() {
-            Ok(mut cb) => match cb.set_text(text) {
-                Ok(()) => self.status.set(success_msg.to_string()),
-                Err(e) => self.status.set(format!("Clipboard error: {e}")),
-            },
+        // On Linux/X11 and Wayland the clipboard contents live in the owning
+        // process — when the `Clipboard` instance is dropped the data becomes
+        // unavailable to other apps. arboard's `SetExtLinux::wait()` forks a
+        // small daemon that holds the selection until the user copies
+        // something else, so the data survives rgx exiting (or the call
+        // returning). macOS and Windows have central clipboard servers, so
+        // the plain `set_text` path is fine there.
+        let result = (|| -> Result<(), arboard::Error> {
+            let cb = arboard::Clipboard::new()?;
+            #[cfg(target_os = "linux")]
+            {
+                use arboard::SetExtLinux;
+                let mut cb = cb;
+                cb.set().wait().text(text.to_string())
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                let mut cb = cb;
+                cb.set_text(text)
+            }
+        })();
+        match result {
+            Ok(()) => self.status.set(success_msg.to_string()),
             Err(e) => self.status.set(format!("Clipboard error: {e}")),
         }
     }
