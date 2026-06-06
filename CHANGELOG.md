@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.7] - 2026-06-06
+
+### Bug Fixes
+
+- *(clipboard)* Fix empty clipboard on Linux after Ctrl+Y (#78)
+arboard's `Clipboard` releases the X11 selection as soon as it's
+  dropped, which the old code did immediately after `set_text`. Now we
+  use `SetExtLinux::wait()` spawned in a detached background thread to
+  hold the selection alive while keeping the TUI responsive. The thread
+  releases when the user copies something else; persistence across rgx
+  exit still requires a clipboard manager on the user's side.
+
+
 ## [0.12.6] - 2026-06-02
 
 ### Features
