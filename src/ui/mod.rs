@@ -223,10 +223,38 @@ pub fn render(frame: &mut Frame, app: &App) {
                 None
             },
             engine_warning,
-            clipboard_status: app.status.text.as_deref(),
         },
         layout.status_bar,
     );
+
+    // Transient status message overlay (e.g. "Copied pattern: …") drawn on
+    // top of the right edge of the status bar so users see Ctrl+Y feedback
+    // at the conventional location. Reported missing in #78. Implemented as
+    // an overlay rather than a StatusBar field to avoid touching that
+    // struct's public API.
+    if let Some(msg) = app.status.text.as_deref() {
+        let label = format!(" {msg} ");
+        let label_width = label.chars().count() as u16;
+        let bar = layout.status_bar;
+        let width = label_width.min(bar.width);
+        let overlay_rect = Rect {
+            x: bar.x + bar.width.saturating_sub(width),
+            y: bar.y,
+            width,
+            height: 1,
+        };
+        frame.render_widget(Clear, overlay_rect);
+        frame.render_widget(
+            Paragraph::new(Span::styled(
+                label,
+                Style::default()
+                    .fg(theme::BASE)
+                    .bg(theme::GREEN)
+                    .add_modifier(Modifier::BOLD),
+            )),
+            overlay_rect,
+        );
+    }
 }
 
 pub const HELP_PAGE_COUNT: usize = 3;

@@ -21,7 +21,7 @@ pub fn format_duration(d: Duration) -> String {
     }
 }
 
-pub struct StatusBar<'a> {
+pub struct StatusBar {
     pub engine: EngineKind,
     pub match_count: usize,
     pub flags: EngineFlags,
@@ -31,13 +31,9 @@ pub struct StatusBar<'a> {
     pub vim_mode: Option<VimMode>,
     /// Non-None when the active engine has a known security advisory.
     pub engine_warning: Option<&'static str>,
-    /// Transient status message (e.g. "Copied pattern: …") that replaces the
-    /// trailing help text while set. Cleared by `App::status.tick()` after
-    /// ~2 seconds. Reported missing from the bottom bar in issue #78.
-    pub clipboard_status: Option<&'a str>,
 }
 
-impl Widget for StatusBar<'_> {
+impl Widget for StatusBar {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let mut spans = Vec::new();
 
@@ -130,20 +126,10 @@ impl Widget for StatusBar<'_> {
             ));
         }
 
-        if let Some(msg) = self.clipboard_status {
-            spans.push(Span::styled(
-                format!(" {msg} "),
-                Style::default()
-                    .fg(theme::BASE)
-                    .bg(theme::GREEN)
-                    .add_modifier(Modifier::BOLD),
-            ));
-        } else {
-            spans.push(Span::styled(
-                " | Tab: switch | Ctrl+E: engine | Ctrl+W: ws | F1: help ",
-                Style::default().fg(theme::SUBTEXT).bg(theme::SURFACE0),
-            ));
-        }
+        spans.push(Span::styled(
+            " | Tab: switch | Ctrl+E: engine | Ctrl+W: ws | F1: help ",
+            Style::default().fg(theme::SUBTEXT).bg(theme::SURFACE0),
+        ));
 
         let line = Line::from(spans);
         let paragraph = Paragraph::new(line).style(Style::default().bg(theme::SURFACE0));
