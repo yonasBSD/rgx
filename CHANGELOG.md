@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.9] - 2026-06-06
+
+### Refactoring
+
+- Clippy sweep across 3 files — no behavior change
+
+
 ## [0.12.8] - 2026-06-06
 
 ### Bug Fixes
