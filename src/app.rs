@@ -494,30 +494,43 @@ impl App {
     }
 
     fn copy_to_clipboard(&mut self, text: &str, success_msg: &str) {
-        // On Linux/X11 and Wayland the clipboard contents live in the owning
-        // process — when the `Clipboard` instance is dropped the data becomes
-        // unavailable to other apps. arboard's `SetExtLinux::wait()` forks a
-        // small daemon that holds the selection until the user copies
-        // something else, so the data survives rgx exiting (or the call
-        // returning). macOS and Windows have central clipboard servers, so
-        // the plain `set_text` path is fine there.
-        let result = (|| -> Result<(), arboard::Error> {
-            let cb = arboard::Clipboard::new()?;
-            #[cfg(target_os = "linux")]
-            {
+        // On Linux (X11/Wayland) the clipboard contents live in the owning
+        // process — when the `Clipboard` instance is dropped the data
+        // becomes unavailable to other apps. arboard's `SetExtLinux::wait()`
+        // sets the selection and then *blocks* until another app takes
+        // ownership. On minimal X11 setups with no clipboard manager
+        // (e.g. raw DWM via .xinitrc, reported in #78), the wait never
+        // returns on its own and freezes the TUI.
+        //
+        // Fix: spawn the wait() into a detached background thread. The
+        // thread holds the X11 selection until either (a) the user copies
+        // something else — wait() returns, thread exits — or (b) rgx
+        // itself exits, killing the thread. Persistence after rgx exit
+        // requires a clipboard manager on the user's side; we can't
+        // synthesize one without fork()ing a separate process.
+        //
+        // macOS and Windows have central clipboard servers — plain
+        // `set_text` is correct and non-blocking there.
+        #[cfg(target_os = "linux")]
+        {
+            let text = text.to_string();
+            std::thread::spawn(move || {
                 use arboard::SetExtLinux;
-                let mut cb = cb;
-                cb.set().wait().text(text.to_string())
+                if let Ok(mut cb) = arboard::Clipboard::new() {
+                    let _ = cb.set().wait().text(text);
+                }
+            });
+            self.status.set(success_msg.to_string());
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            match arboard::Clipboard::new() {
+                Ok(mut cb) => match cb.set_text(text) {
+                    Ok(()) => self.status.set(success_msg.to_string()),
+                    Err(e) => self.status.set(format!("Clipboard error: {e}")),
+                },
+                Err(e) => self.status.set(format!("Clipboard error: {e}")),
             }
-            #[cfg(not(target_os = "linux"))]
-            {
-                let mut cb = cb;
-                cb.set_text(text)
-            }
-        })();
-        match result {
-            Ok(()) => self.status.set(success_msg.to_string()),
-            Err(e) => self.status.set(format!("Clipboard error: {e}")),
         }
     }
 
