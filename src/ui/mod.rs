@@ -223,6 +223,7 @@ pub fn render(frame: &mut Frame, app: &App) {
                 None
             },
             engine_warning,
+            clipboard_status: app.status.text.as_deref(),
         },
         layout.status_bar,
     );
