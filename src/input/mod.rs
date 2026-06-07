@@ -4,6 +4,11 @@ pub mod vim;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+// `#[non_exhaustive]` so future additive variants (e.g. new key actions) are
+// non-breaking under semver. Without it, each `Action` variant addition forces
+// a minor bump because downstream `match` expressions would no longer be
+// exhaustive. Adding this attribute is itself a one-time breaking change.
+#[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Action {
     InsertChar(char),
