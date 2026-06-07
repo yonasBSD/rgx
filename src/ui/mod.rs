@@ -50,9 +50,19 @@ pub struct PanelLayout {
     pub match_display: Rect,
     pub explanation: Rect,
     pub status_bar: Rect,
+    /// Right-side Quick Reference panel — Some when `show_quickref` is on and
+    /// the terminal is wide enough to host both it and a useful results area.
+    pub quickref: Option<Rect>,
 }
 
-pub fn compute_layout(size: Rect) -> PanelLayout {
+/// Width (cols) of the Quick Reference side panel when `show_quickref` is on.
+pub const QUICKREF_PANEL_WIDTH: u16 = 38;
+
+/// Minimum width left for the results area (Matches + Explanation) before the
+/// Quick Reference side panel is suppressed. Avoids cramping the main view.
+pub const QUICKREF_MIN_RESULTS_WIDTH: u16 = 60;
+
+pub fn compute_layout(size: Rect, show_quickref: bool) -> PanelLayout {
     let main_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -64,16 +74,31 @@ pub fn compute_layout(size: Rect) -> PanelLayout {
         ])
         .split(size);
 
-    let results_chunks = if main_chunks[3].width > 80 {
+    // Carve a Quick Reference strip off the right of the results area when
+    // toggled on AND the terminal is wide enough to keep the main results area
+    // usable.
+    let quickref_fits =
+        show_quickref && main_chunks[3].width >= QUICKREF_PANEL_WIDTH + QUICKREF_MIN_RESULTS_WIDTH;
+    let (results_area, quickref) = if quickref_fits {
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(0), Constraint::Length(QUICKREF_PANEL_WIDTH)])
+            .split(main_chunks[3]);
+        (chunks[0], Some(chunks[1]))
+    } else {
+        (main_chunks[3], None)
+    };
+
+    let results_chunks = if results_area.width > 80 {
         Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(main_chunks[3])
+            .split(results_area)
     } else {
         Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(main_chunks[3])
+            .split(results_area)
     };
 
     PanelLayout {
@@ -83,12 +108,13 @@ pub fn compute_layout(size: Rect) -> PanelLayout {
         match_display: results_chunks[0],
         explanation: results_chunks[1],
         status_bar: main_chunks[4],
+        quickref,
     }
 }
 
 pub fn render(frame: &mut Frame, app: &App) {
     let size = frame.area();
-    let layout = compute_layout(size);
+    let layout = compute_layout(size, app.show_quickref);
 
     let bt = border_type(app.rounded_borders);
 
@@ -197,6 +223,28 @@ pub fn render(frame: &mut Frame, app: &App) {
         },
         layout.explanation,
     );
+
+    // Quick Reference side panel (F3 to toggle) — reuses the F1 help-page-1
+    // content so the two never drift out of sync.
+    if let Some(quickref_area) = layout.quickref {
+        let pages = build_help_pages(app.engine_kind);
+        let mut lines: Vec<Line<'static>> = vec![Line::from("")];
+        lines.extend(pages[1].1.iter().cloned());
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_type(bt)
+            .border_style(Style::default().fg(theme::BLUE))
+            .title(Span::styled(
+                " Quick Reference (F3) ",
+                Style::default().fg(theme::TEXT),
+            ));
+        frame.render_widget(
+            Paragraph::new(lines)
+                .block(block)
+                .wrap(Wrap { trim: false }),
+            quickref_area,
+        );
+    }
 
     // Status bar
     #[cfg(feature = "pcre2-engine")]
@@ -310,6 +358,7 @@ fn build_help_pages(engine: EngineKind) -> Vec<(String, Vec<Line<'static>>)> {
             "F1",
             "Show/hide help (Left(h)/Right(l) to page, Up(k)/Down(j) to scroll)",
         ),
+        shortcut("F3", "Toggle Quick Reference side panel"),
         shortcut("Esc", "Quit"),
         Line::from(""),
         Line::from(Span::styled(

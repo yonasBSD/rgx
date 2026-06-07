@@ -421,12 +421,28 @@ fn whitespace_visualization_toggle() {
 #[test]
 fn compute_layout_does_not_panic() {
     use ratatui::layout::Rect;
-    // Wide terminal
-    let _ = ui::compute_layout(Rect::new(0, 0, 120, 40));
-    // Narrow terminal
-    let _ = ui::compute_layout(Rect::new(0, 0, 40, 20));
-    // Tiny terminal
-    let _ = ui::compute_layout(Rect::new(0, 0, 10, 10));
+    for show_quickref in [false, true] {
+        // Wide terminal
+        let _ = ui::compute_layout(Rect::new(0, 0, 120, 40), show_quickref);
+        // Narrow terminal
+        let _ = ui::compute_layout(Rect::new(0, 0, 40, 20), show_quickref);
+        // Tiny terminal
+        let _ = ui::compute_layout(Rect::new(0, 0, 10, 10), show_quickref);
+    }
+}
+
+#[test]
+fn quickref_side_panel_appears_only_when_wide_and_toggled() {
+    use ratatui::layout::Rect;
+    // Wide + on: quickref is Some
+    let wide_on = ui::compute_layout(Rect::new(0, 0, 200, 40), true);
+    assert!(wide_on.quickref.is_some());
+    // Wide + off: quickref is None
+    let wide_off = ui::compute_layout(Rect::new(0, 0, 200, 40), false);
+    assert!(wide_off.quickref.is_none());
+    // Narrow + on: quickref is suppressed to keep the results area usable
+    let narrow_on = ui::compute_layout(Rect::new(0, 0, 60, 30), true);
+    assert!(narrow_on.quickref.is_none());
 }
 
 #[test]

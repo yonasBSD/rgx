@@ -192,11 +192,11 @@ async fn run() -> anyhow::Result<ExitCode> {
     // Event loop
     let mut events = EventHandler::new(Duration::from_millis(50));
 
-    let mut last_layout = ui::compute_layout(terminal.get_frame().area());
+    let mut last_layout = ui::compute_layout(terminal.get_frame().area(), app.show_quickref);
 
     loop {
         terminal.draw(|frame| {
-            last_layout = ui::compute_layout(frame.area());
+            last_layout = ui::compute_layout(frame.area(), app.show_quickref);
             ui::render(frame, &app);
         })?;
 
