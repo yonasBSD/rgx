@@ -63,6 +63,33 @@ pub const QUICKREF_PANEL_WIDTH: u16 = 38;
 pub const QUICKREF_MIN_RESULTS_WIDTH: u16 = 60;
 
 pub fn compute_layout(size: Rect, show_quickref: bool) -> PanelLayout {
+    // Split the bottom status bar off first so the quickref panel can span
+    // the full height above it (reported in #83 — when zoomed in, the panel
+    // was confined to the results area's height and clipped most of its
+    // content).
+    let outer = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(1)])
+        .split(size);
+    let main_top = outer[0];
+    let status_bar = outer[1];
+
+    // Carve a Quick Reference strip off the right of the full main area when
+    // toggled on AND the terminal is wide enough to keep the main results area
+    // usable.
+    let quickref_fits =
+        show_quickref && main_top.width >= QUICKREF_PANEL_WIDTH + QUICKREF_MIN_RESULTS_WIDTH;
+    let (left_area, quickref) = if quickref_fits {
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(0), Constraint::Length(QUICKREF_PANEL_WIDTH)])
+            .split(main_top);
+        (chunks[0], Some(chunks[1]))
+    } else {
+        (main_top, None)
+    };
+
+    // Stack the editors and results area in the remaining left area.
     let main_chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -70,24 +97,9 @@ pub fn compute_layout(size: Rect, show_quickref: bool) -> PanelLayout {
             Constraint::Length(8), // test string input
             Constraint::Length(3), // replacement input
             Constraint::Min(5),    // results area
-            Constraint::Length(1), // status bar
         ])
-        .split(size);
-
-    // Carve a Quick Reference strip off the right of the results area when
-    // toggled on AND the terminal is wide enough to keep the main results area
-    // usable.
-    let quickref_fits =
-        show_quickref && main_chunks[3].width >= QUICKREF_PANEL_WIDTH + QUICKREF_MIN_RESULTS_WIDTH;
-    let (results_area, quickref) = if quickref_fits {
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(0), Constraint::Length(QUICKREF_PANEL_WIDTH)])
-            .split(main_chunks[3]);
-        (chunks[0], Some(chunks[1]))
-    } else {
-        (main_chunks[3], None)
-    };
+        .split(left_area);
+    let results_area = main_chunks[3];
 
     let results_chunks = if results_area.width > 80 {
         Layout::default()
@@ -107,7 +119,7 @@ pub fn compute_layout(size: Rect, show_quickref: bool) -> PanelLayout {
         replace_input: main_chunks[2],
         match_display: results_chunks[0],
         explanation: results_chunks[1],
-        status_bar: main_chunks[4],
+        status_bar,
         quickref,
     }
 }
@@ -224,12 +236,18 @@ pub fn render(frame: &mut Frame, app: &App) {
         layout.explanation,
     );
 
-    // Quick Reference side panel (F3 to toggle) — reuses the F1 help-page-1
-    // content so the two never drift out of sync.
+    // Quick Reference side panel (F3 to toggle; PageUp/PageDown to scroll)
+    // — reuses the F1 help-page-1 content so the two never drift out of sync.
     if let Some(quickref_area) = layout.quickref {
         let pages = build_help_pages(app.engine_kind);
         let mut lines: Vec<Line<'static>> = vec![Line::from("")];
         lines.extend(pages[1].1.iter().cloned());
+        // Cap the scroll offset at the maximum that keeps content on screen
+        // (accounting for the 2 chrome rows: top + bottom border). Prevents
+        // the user from scrolling into an entirely blank panel.
+        let max_scroll =
+            (lines.len() as u16).saturating_sub(quickref_area.height.saturating_sub(2));
+        let scroll = app.quickref_scroll.min(max_scroll);
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(bt)
@@ -241,7 +259,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(
             Paragraph::new(lines)
                 .block(block)
-                .wrap(Wrap { trim: false }),
+                .wrap(Wrap { trim: false })
+                .scroll((scroll, 0)),
             quickref_area,
         );
     }
@@ -359,6 +378,7 @@ fn build_help_pages(engine: EngineKind) -> Vec<(String, Vec<Line<'static>>)> {
             "Show/hide help (Left(h)/Right(l) to page, Up(k)/Down(j) to scroll)",
         ),
         shortcut("F3", "Toggle Quick Reference side panel"),
+        shortcut("PgUp/PgDn", "Scroll Quick Reference side panel"),
         shortcut("Esc", "Quit"),
         Line::from(""),
         Line::from(Span::styled(

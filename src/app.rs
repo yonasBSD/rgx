@@ -107,6 +107,7 @@ pub struct App {
     pub status: StatusMessage,
     pub show_whitespace: bool,
     pub show_quickref: bool,
+    pub quickref_scroll: u16,
     pub rounded_borders: bool,
     pub vim_mode: bool,
     pub vim_state: crate::input::vim::VimState,
@@ -161,6 +162,7 @@ impl App {
             status: StatusMessage::default(),
             show_whitespace: false,
             show_quickref: false,
+            quickref_scroll: 0,
             rounded_borders: false,
             vim_mode: false,
             vim_state: crate::input::vim::VimState::new(),
@@ -907,6 +909,17 @@ impl App {
             }
             Action::ToggleQuickref => {
                 self.show_quickref = !self.show_quickref;
+                self.quickref_scroll = 0;
+            }
+            Action::ScrollQuickrefUp => {
+                if self.show_quickref {
+                    self.quickref_scroll = self.quickref_scroll.saturating_sub(1);
+                }
+            }
+            Action::ScrollQuickrefDown => {
+                if self.show_quickref {
+                    self.quickref_scroll = self.quickref_scroll.saturating_add(1);
+                }
             }
             Action::ToggleCaseInsensitive => {
                 self.flags.toggle_case_insensitive();

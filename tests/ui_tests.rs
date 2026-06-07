@@ -446,6 +446,24 @@ fn quickref_side_panel_appears_only_when_wide_and_toggled() {
 }
 
 #[test]
+fn quickref_side_panel_spans_full_height_above_status_bar() {
+    use ratatui::layout::Rect;
+    // Reported in #83 follow-up: zoomed-in terminals clipped most of the
+    // quickref content because the panel was confined to the results area.
+    // The panel now carves a strip from the full main area (everything
+    // above the 1-row status bar) so it can scroll its content freely.
+    let layout = ui::compute_layout(Rect::new(0, 0, 200, 40), true);
+    let qr = layout
+        .quickref
+        .expect("quickref should be Some on a wide+on layout");
+    assert_eq!(
+        qr.height, 39,
+        "quickref should span terminal height minus the 1-row status bar"
+    );
+    assert_eq!(layout.status_bar.height, 1);
+}
+
+#[test]
 fn test_empty_state_render() {
     let mut terminal = create_test_terminal();
     let app = App::new(EngineKind::RustRegex, EngineFlags::default());
