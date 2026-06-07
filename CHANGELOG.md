@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.14.0] - 2026-06-07
+
+### Bug Fixes
+
+- *(ui)* Full-height Quick Reference panel + PageUp/PageDown scrolling ([#83](https://github.com/brevity1swos/rgx/pull/83))
+clearins1ght reported (issue #83 follow-up): when zooming in via the
+  terminal emulator (Ctrl+= in Alacritty), the Quick Reference side
+  panel showed only a few lines because it was confined to the results
+  area's height, and arrow keys didn't scroll it.
+
+  Two changes:
+
+  1. The panel now spans the full main area — from absolute top to just
+     above the status bar. compute_layout splits off the 1-row status
+     bar first, then carves the quickref strip from the remaining main
+     region. The editor stack (regex/test/replace/results) then occupies
+     the left half. Previously the strip came out of just main_chunks[3]
+     (results area only).
+
+  2. PageUp / PageDown scroll the panel when it's visible. Scroll offset
+     is bound at render time so the user can't scroll past the end into
+     empty space; toggling the panel off and back on resets the offset
+     to 0.
+
+  New test `quickref_side_panel_spans_full_height_above_status_bar`
+  pins the geometry: panel height == terminal height - 1 (status bar).
+
+### Miscellaneous
+
+- *(input)* Mark Action enum #[non_exhaustive]
+Pays the one-time semver cost in v0.14.0 (already minor-bumped due to
+  this release's two new variants) to make future additive variants
+  non-breaking. Without this attribute, every new key Action triggers
+  another minor bump because downstream `match` expressions would no
+  longer be exhaustive.
+
+  In practice Action is internal to the rgx binary; this is a
+  future-proofing move, not a real API change.
+
+
 ## [0.13.0] - 2026-06-07
 
 ### Features
