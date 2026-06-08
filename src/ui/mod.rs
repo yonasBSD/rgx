@@ -242,12 +242,18 @@ pub fn render(frame: &mut Frame, app: &App) {
         let pages = build_help_pages(app.engine_kind);
         let mut lines: Vec<Line<'static>> = vec![Line::from("")];
         lines.extend(pages[1].1.iter().cloned());
-        // Cap the scroll offset at the maximum that keeps content on screen
-        // (accounting for the 2 chrome rows: top + bottom border). Prevents
-        // the user from scrolling into an entirely blank panel.
-        let max_scroll =
-            (lines.len() as u16).saturating_sub(quickref_area.height.saturating_sub(2));
-        let scroll = app.quickref_scroll.min(max_scroll);
+        // Pass the scroll offset directly. An earlier clamp tried to keep
+        // content on screen, but it used the source-line count (~25) and
+        // didn't account for `Wrap`-induced row growth — the column-0 +
+        // description format with `Wrap { trim: false }` turns long shortcut
+        // descriptions and header rules into 2 rendered rows each on a 36-col
+        // text area. With actual rendered rows around 35, `max_scroll` was
+        // pinned to 0 on most terminals AND on zoomed-in viewports where the
+        // bottom of the content was visibly clipped, defeating the whole
+        // point of the binding. Reported in #83 follow-up by clearins1ght
+        // across Alacritty / Kitty / st. Letting the user over-scroll into
+        // blank space on tall terminals is harmless — PgUp brings them back.
+        let scroll = app.quickref_scroll;
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(bt)
