@@ -2,3 +2,21 @@ src/
 node_modules/
 tsconfig.json
 .vscode/
+
+# Agent / IDE / local-config dirs (do NOT publish session state, prompts,
+# subagent traces, or local Claude config to the Marketplace)
+.omc/
+.claude/
+
+# Repo plumbing — irrelevant to consumers
+.git/
+.gitignore
+.vscodeignore
+
+# Build artifacts that have no consumer value
+*.vsix
+package-lock.json
+
+# Stray TypeScript that escaped src/ (defensive)
+*.ts
+*.tsbuildinfo
