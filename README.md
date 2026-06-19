@@ -52,6 +52,9 @@ cd rgx && cargo install --path .
 
 # With PCRE2 engine (requires libpcre2-dev)
 cargo install rgx-cli --features pcre2-engine
+
+# With ReDoS analysis (Ctrl+A, via the rxray crate)
+cargo install rgx-cli --features redos
 ```
 
 See [docs/advanced.md](docs/advanced.md#building-with-pcre2) for the PCRE2 security note.
@@ -74,6 +77,7 @@ Full flag reference, piping recipes, and `rgx filter` + `--json` usage:
 ## Features
 
 - **Step-through debugger** (Ctrl+D, PCRE2) — backtracking visualization, heatmap mode, dual-cursor trace
+- **ReDoS analysis** (optional, Ctrl+A) — flags catastrophic backtracking (linear / polynomial / exponential) via the [rxray](https://crates.io/crates/rxray) crate and loads a *verified* attack string to step through in the debugger. Build with `--features redos`
 - Real-time matching with AST-based syntax highlighting and capture-group colors
 - **3 regex engines**: Rust `regex` (default), `fancy-regex` (lookaround / backrefs), PCRE2 (+ recursion / conditionals)
 - **Auto engine selection** — upgrades engines automatically when your pattern needs lookahead, backreferences, or recursion
