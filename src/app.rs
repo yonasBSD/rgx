@@ -252,27 +252,22 @@ impl App {
                 }
             };
             match analyze(&pattern, engine) {
-                Ok(report) => match report.worst {
-                    ComplexityClass::Linear => {
-                        self.status.set("ReDoS: linear — safe".to_string());
-                    }
-                    ComplexityClass::Polynomial(k) => {
-                        let loaded = load_attack(self);
-                        self.status.set(if loaded {
-                            format!("ReDoS: polynomial O(n^{k}) — attack loaded, Ctrl+D to step")
-                        } else {
-                            format!("ReDoS: polynomial O(n^{k})")
-                        });
-                    }
-                    ComplexityClass::Exponential => {
-                        let loaded = load_attack(self);
-                        self.status.set(if loaded {
-                            "ReDoS: EXPONENTIAL — attack loaded, Ctrl+D to step".to_string()
-                        } else {
-                            "ReDoS: EXPONENTIAL".to_string()
-                        });
-                    }
-                },
+                Ok(report) => {
+                    let label = match report.worst {
+                        ComplexityClass::Linear => {
+                            self.status.set("ReDoS: linear — safe".to_string());
+                            return;
+                        }
+                        ComplexityClass::Polynomial(k) => format!("polynomial O(n^{k})"),
+                        ComplexityClass::Exponential => "EXPONENTIAL".to_string(),
+                    };
+                    let suffix = if load_attack(self) {
+                        " — attack loaded, Ctrl+D to step"
+                    } else {
+                        ""
+                    };
+                    self.status.set(format!("ReDoS: {label}{suffix}"));
+                }
                 Err(e) => {
                     self.status.set(format!("ReDoS: {e}"));
                 }
