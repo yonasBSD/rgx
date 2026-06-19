@@ -64,6 +64,7 @@ pub enum Action {
     EnterInsertModeLineEnd,
     EnterNormalMode,
     ToggleDebugger,
+    AnalyzeRedos,
     Quit,
     None,
 }
@@ -104,6 +105,7 @@ pub fn key_to_action(key: KeyEvent) -> Action {
         KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
             Action::ToggleDebugger
         }
+        KeyCode::Char('a') if key.modifiers.contains(KeyModifiers::CONTROL) => Action::AnalyzeRedos,
         KeyCode::Char('i') if key.modifiers.contains(KeyModifiers::ALT) => {
             Action::ToggleCaseInsensitive
         }

@@ -52,7 +52,8 @@ const fn is_global_shortcut(key: &KeyEvent) -> bool {
         return matches!(
             key.code,
             KeyCode::Char(
-                'd' | 'e'
+                'a' | 'd'
+                    | 'e'
                     | 'z'
                     | 'Z'
                     | 'y'

@@ -219,6 +219,72 @@ impl App {
         self.rematch();
     }
 
+    /// Analyze the current pattern for ReDoS (Ctrl+A). When vulnerable, load a
+    /// verified attack string into the test panel so it can be stepped through
+    /// in the debugger (Ctrl+D). Requires the `redos` feature.
+    pub fn analyze_redos(&mut self) {
+        #[cfg(feature = "redos")]
+        {
+            use rxray::{analyze, attack, ComplexityClass, Engine};
+            let pattern = self.regex_editor.content().to_string();
+            if pattern.is_empty() {
+                self.status.set("ReDoS: empty pattern".to_string());
+                return;
+            }
+            let engine = match self.engine_kind {
+                EngineKind::RustRegex => Engine::RustRegex,
+                EngineKind::FancyRegex => Engine::FancyRegex,
+                #[cfg(feature = "pcre2-engine")]
+                EngineKind::Pcre2 => Engine::Pcre2,
+            };
+            // A modest pump count: dramatic in the step debugger, but bounded so
+            // the normal rematch does not itself hang on the loaded attack.
+            let load_attack = |app: &mut Self| -> bool {
+                match attack(&pattern, engine, 12) {
+                    Some(a) => {
+                        // Load WITHOUT rematching: running the catastrophic input on
+                        // the live engine would freeze the UI. It is meant to be
+                        // stepped through in the debugger (Ctrl+D), which is bounded.
+                        app.test_editor = Editor::with_content(a.value);
+                        true
+                    }
+                    None => false,
+                }
+            };
+            match analyze(&pattern, engine) {
+                Ok(report) => match report.worst {
+                    ComplexityClass::Linear => {
+                        self.status.set("ReDoS: linear — safe".to_string());
+                    }
+                    ComplexityClass::Polynomial(k) => {
+                        let loaded = load_attack(self);
+                        self.status.set(if loaded {
+                            format!("ReDoS: polynomial O(n^{k}) — attack loaded, Ctrl+D to step")
+                        } else {
+                            format!("ReDoS: polynomial O(n^{k})")
+                        });
+                    }
+                    ComplexityClass::Exponential => {
+                        let loaded = load_attack(self);
+                        self.status.set(if loaded {
+                            "ReDoS: EXPONENTIAL — attack loaded, Ctrl+D to step".to_string()
+                        } else {
+                            "ReDoS: EXPONENTIAL".to_string()
+                        });
+                    }
+                },
+                Err(e) => {
+                    self.status.set(format!("ReDoS: {e}"));
+                }
+            }
+        }
+        #[cfg(not(feature = "redos"))]
+        {
+            self.status
+                .set("ReDoS analysis unavailable — rebuild with --features redos".to_string());
+        }
+    }
+
     pub fn switch_engine(&mut self) {
         self.engine_kind = self.engine_kind.next();
         self.engine = engine::create_engine(self.engine_kind);
@@ -957,6 +1023,9 @@ impl App {
             Action::ExportRegex101 => {
                 self.copy_regex101_url();
             }
+            Action::AnalyzeRedos => {
+                self.analyze_redos();
+            }
             Action::GenerateCode => {
                 self.overlay.codegen = true;
                 self.overlay.codegen_language_index = 0;
@@ -1215,5 +1284,29 @@ fn print_colored_replace(output: &str, segments: &[engine::ReplaceSegment]) {
     }
     if !output.ends_with('\n') {
         println!();
+    }
+}
+
+#[cfg(all(test, feature = "redos"))]
+mod redos_tests {
+    use super::*;
+
+    #[test]
+    fn ctrl_a_flags_exponential_and_loads_attack() {
+        let mut app = App::new(EngineKind::FancyRegex, EngineFlags::default());
+        app.set_pattern("(a+)+$");
+        app.analyze_redos();
+        let msg = app.status.text.clone().unwrap_or_default();
+        assert!(msg.contains("EXPONENTIAL"), "got: {msg}");
+        assert!(!app.test_editor.content().is_empty(), "attack not loaded");
+    }
+
+    #[test]
+    fn ctrl_a_marks_safe_pattern_safe() {
+        let mut app = App::new(EngineKind::FancyRegex, EngineFlags::default());
+        app.set_pattern("a+b+");
+        app.analyze_redos();
+        let msg = app.status.text.clone().unwrap_or_default();
+        assert!(msg.contains("safe"), "got: {msg}");
     }
 }

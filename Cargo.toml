@@ -24,6 +24,9 @@ path = "src/lib.rs"
 [features]
 default = []
 pcre2-engine = ["dep:pcre2", "dep:pcre2-sys"]
+# Optional ReDoS analysis via the rxray crate (Ctrl+A). Default-off: the core
+# binary and its build are unchanged unless explicitly enabled.
+redos = ["dep:rxray"]
 
 [dependencies]
 arboard = "3"
@@ -43,6 +46,7 @@ serde = { version = "1", features = ["derive"] }
 toml = "1.0"
 dirs = "6"
 unicode-width = "0.2"
+rxray = { version = "0.1", optional = true }
 anyhow = "1"
 tokio-stream = "0.1"
 
