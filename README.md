@@ -2,12 +2,12 @@
 
 # rgx
 
-**A regex debugger for the terminal — step-through execution, 3 engines, code generation, and live stream filtering**
+**A regex debugger for the terminal — step-through execution, ReDoS analysis, 3 engines, code generation, and live stream filtering**
 
 [![CI](https://github.com/brevity1swos/rgx/actions/workflows/ci.yml/badge.svg)](https://github.com/brevity1swos/rgx/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/rgx-cli.svg)](https://crates.io/crates/rgx-cli)
 [![Downloads](https://img.shields.io/crates/d/rgx-cli.svg)](https://crates.io/crates/rgx-cli)
-[![License](https://img.shields.io/crates/l/rgx.svg)](LICENSE-MIT)
+[![License](https://img.shields.io/crates/l/rgx-cli.svg)](LICENSE-MIT)
 
 Test and debug regular expressions without leaving your terminal. Written in Rust.
 
